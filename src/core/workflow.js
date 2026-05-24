@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════
    CORE — WORKFLOW UTILITIES
 ═══════════════════════════════════════════ */
+import { anthropicHeaders } from './api-key.jsx'
+
 export function applyPatches(question, patches) {
   if (!patches || !patches.length) return question
   const q = JSON.parse(JSON.stringify(question))
@@ -165,7 +167,7 @@ export async function runQAForFrame(q, el) {
     try {
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: anthropicHeaders(),
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 1200,
@@ -227,7 +229,7 @@ export function buildDiagramRevisionPrompt(section) {
 export async function generateQuestions(topic, section, year, count, exemplars) {
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: anthropicHeaders(),
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 8000,
@@ -272,7 +274,7 @@ export async function reviseDiagram(q, cardEl, maxIter, onProgress) {
     try {
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: anthropicHeaders(),
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
           max_tokens: 2000,
