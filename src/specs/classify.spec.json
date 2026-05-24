@@ -1,0 +1,9 @@
+{
+  "type": "classify",
+  "locked": false,
+  "generation_prompt": "",
+  "qa_rubric": { "data_checks": [], "visual_checks": [] },
+  "fixtures": [],
+  "fail_patterns": [],
+  "pass_patterns": []
+}
