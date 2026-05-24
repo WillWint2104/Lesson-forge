@@ -327,8 +327,13 @@ export default function App() {
           currentKey={apiKey}
           onClose={() => setApiKeyModalOpen(false)}
           onSave={(newKey) => {
+            // Attempt to persist, then mirror state from what actually
+            // landed in localStorage. saveStoredApiKey silently swallows
+            // failures (private-browsing, quota-exceeded, disabled storage);
+            // reading back means the gear's green dot can't lie about the
+            // key being saved while anthropicHeaders() still throws.
             saveStoredApiKey(newKey)
-            setApiKey(newKey)
+            setApiKey(loadStoredApiKey())
           }}
         />
       )}
