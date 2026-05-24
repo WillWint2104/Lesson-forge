@@ -140,9 +140,14 @@ jobs:
           # Note: piping through jq with --arg requires dropping `gh api --jq`
           # in favor of `gh api | jq`, which still works because --paginate
           # concatenates pages into a single array.
+          # Note the parentheses around the contains() call. Without them, jq
+          # parses `.user.login | contains(...) and .commit_id == $sha` as a
+          # single pipeline whose right side runs in the string context of
+          # .user.login — and `.commit_id` on a string errors with
+          # `Cannot index string with string "commit_id"` (exit 5).
           gh api --paginate "repos/${{ github.repository }}/pulls/$PR_NUMBER/comments" \
             | jq --arg sha "$HEAD_SHA" \
-                '[.[] | select(.user.login | contains("coderabbitai") and .commit_id == $sha) | {path, line, side, body, html_url}]' \
+                '[.[] | select((.user.login | contains("coderabbitai")) and .commit_id == $sha) | {path, line, side, body, html_url}]' \
             > /tmp/inline.json
 
           # Filter for HIGH/MEDIUM by matching CodeRabbit's category headings/emoji.
