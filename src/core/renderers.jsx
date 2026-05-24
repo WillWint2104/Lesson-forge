@@ -1,9 +1,13 @@
 import { TYPE_META } from './schema.js'
 import { C, SERIF, SANS, MONO, Instruction, PartLabel, WorkArea, WorkedAnswer } from './ui.jsx'
 import { MathExpr } from './math.jsx'
-import { GeometryDiagram, CTTriangleDiagram } from '../domains/geometry.jsx'
+import { DiagramBlock } from './diagram-block.jsx'
 import { GraphRenderer } from '../domains/graph.jsx'
 import { ClassifyRenderer } from '../domains/algebra.jsx'
+
+// Re-export DiagramBlock so callers that already import it from this
+// module (the historical location) keep working without churn.
+export { DiagramBlock }
 
 /* ═══════════════════════════════════════════
    CORE — RENDERER REGISTRY
@@ -14,21 +18,6 @@ export function registerRenderer(type, Comp) {
 }
 export function getRenderer(type) {
   return _renderers[type] || ShortAnswerRenderer
-}
-
-export function DiagramBlock({ diagram }) {
-  if (!diagram) return null
-  if (diagram.type === 'svg_inline' && diagram.value)
-    return (
-      <div
-        style={{ margin: '10px 0', lineHeight: 0 }}
-        dangerouslySetInnerHTML={{ __html: diagram.value }}
-      />
-    )
-  if (diagram.type === 'ct_triangle' && diagram.data)
-    return <CTTriangleDiagram item={diagram.data} />
-  if (diagram.type === 'geometry' && diagram.data) return <GeometryDiagram data={diagram.data} />
-  return null
 }
 
 /* ═══════════════════════════════════════════

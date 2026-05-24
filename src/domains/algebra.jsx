@@ -1,6 +1,9 @@
 import { C, SANS, Instruction } from '../core/ui.jsx'
 import { MathExpr } from '../core/math.jsx'
-import { DiagramBlock } from '../core/renderers.jsx'
+// Import from the leaf module rather than core/renderers.jsx — renderers.jsx
+// imports this file (for ClassifyRenderer), so going back through it would
+// re-create the cycle the leaf module exists to break.
+import { DiagramBlock } from '../core/diagram-block.jsx'
 
 /* ═══════════════════════════════════════════
    DOMAIN — ALGEBRA (classify)

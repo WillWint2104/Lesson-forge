@@ -13,6 +13,20 @@ import QA from './tabs/QA.jsx'
 import Export from './tabs/Export.jsx'
 import Review from './tabs/Review.jsx'
 
+// Every value `view` can legally hold — used by the dispatcher's
+// "unknown tab" fallback below so we render an explicit error
+// instead of an empty surface if a typo or stale state ever leaks in.
+const KNOWN_VIEWS = new Set([
+  'generate',
+  'import',
+  'validate',
+  'preview',
+  'answers',
+  'qa',
+  'export',
+  'review',
+])
+
 /* ═══════════════════════════════════════════
    APP
 ═══════════════════════════════════════════ */
@@ -648,6 +662,34 @@ export default function App() {
             setView={setView}
             setJsonPanel={setJsonPanel}
           />
+        )}
+
+        {!KNOWN_VIEWS.has(view) && (
+          <div
+            style={{
+              padding: '40px 24px',
+              textAlign: 'center',
+              fontFamily: SANS,
+              color: C.slate,
+            }}
+          >
+            <div
+              style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                fontFamily: MONO,
+                color: C.red,
+                marginBottom: '6px',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Tab not found
+            </div>
+            <div style={{ fontSize: '13px' }}>
+              Unknown view: <code style={{ fontFamily: MONO }}>{String(view)}</code>
+            </div>
+          </div>
         )}
       </div>
     </div>
