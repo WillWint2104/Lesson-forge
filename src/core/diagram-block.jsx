@@ -8,7 +8,22 @@
    domain files. This breaks the renderers ↔ algebra import cycle in
    the same way core/colors.js breaks ui ↔ math. */
 
+import DOMPurify from 'dompurify'
 import { CTTriangleDiagram, GeometryDiagram } from '../domains/geometry.jsx'
+
+// `diagram.value` for svg_inline can come from the LLM (when Claude generates
+// inline SVG) or from a user-pasted lesson JSON. Either could in principle
+// contain <script> tags, on* handlers, or javascript: URLs. Sanitize with an
+// SVG-aware allowlist before handing the string to dangerouslySetInnerHTML.
+//
+// USE_PROFILES.svg + svgFilters preserves the full legitimate SVG element set
+// (g, path, circle, rect, polygon, polyline, text, filter primitives, …) and
+// drops <script>, event handlers, and javascript:/data: URLs.
+function sanitizeSvg(raw) {
+  return DOMPurify.sanitize(raw, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+  })
+}
 
 export function DiagramBlock({ diagram }) {
   if (!diagram) return null
@@ -16,7 +31,7 @@ export function DiagramBlock({ diagram }) {
     return (
       <div
         style={{ margin: '10px 0', lineHeight: 0 }}
-        dangerouslySetInnerHTML={{ __html: diagram.value }}
+        dangerouslySetInnerHTML={{ __html: sanitizeSvg(diagram.value) }}
       />
     )
   if (diagram.type === 'ct_triangle' && diagram.data)

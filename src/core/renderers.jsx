@@ -168,7 +168,7 @@ export function DiagramRenderer({ q, isAnswer, worksheet }) {
     responses = q.answer?.responses || []
   return (
     <div>
-      <Instruction text={q.instruction} />
+      <Instruction text={q.instruction} worksheet={worksheet} />
       <DiagramBlock diagram={q.content?.diagram} />
       {parts && parts.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginTop: '8px' }}>
@@ -231,14 +231,15 @@ export function TableRenderer({ q, isAnswer, worksheet }) {
     aRows = q.answer?.rows || []
   const display = isAnswer && aRows.length ? aRows : qRows,
     blanks = new Set()
+  // `== null` catches both null and undefined. Numeric 0 is NOT a blank.
   qRows.forEach((row, ri) =>
     row.forEach((cell, ci) => {
-      if (cell === '' || cell === null) blanks.add(ri + '-' + ci)
+      if (cell === '' || cell == null) blanks.add(`${ri}-${ci}`)
     })
   )
   return (
     <div>
-      <Instruction text={q.instruction} />
+      <Instruction text={q.instruction} worksheet={worksheet} />
       <div style={{ overflowX: 'auto', marginTop: '8px' }}>
         <table
           style={{ borderCollapse: 'collapse', width: '100%', fontFamily: SANS, fontSize: '13px' }}
@@ -266,7 +267,10 @@ export function TableRenderer({ q, isAnswer, worksheet }) {
             {display.map((row, ri) => (
               <tr key={ri} style={{ background: ri % 2 === 0 ? '#fff' : C.slateXlt }}>
                 {row.map((cell, ci) => {
-                  const was = blanks.has(ri + '-' + ci)
+                  const was = blanks.has(`${ri}-${ci}`)
+                  // Explicit blank check — `cell ? ...` would render numeric 0
+                  // as the ▢ placeholder, which is wrong when 0 is a valid value.
+                  const isBlank = cell === '' || cell == null
                   return (
                     <td
                       key={ci}
@@ -279,7 +283,15 @@ export function TableRenderer({ q, isAnswer, worksheet }) {
                         color: isAnswer && was ? C.greenDk : C.black,
                       }}
                     >
-                      {cell ? <MathExpr text={cell} /> : isAnswer ? '' : '▢'}
+                      {isBlank ? (
+                        isAnswer ? (
+                          ''
+                        ) : (
+                          '▢'
+                        )
+                      ) : (
+                        <MathExpr text={String(cell)} />
+                      )}
                     </td>
                   )
                 })}
