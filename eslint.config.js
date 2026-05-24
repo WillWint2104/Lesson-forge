@@ -31,6 +31,20 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      // Standard JS convention — names starting with `_` are intentionally
+      // unused. Lets us write `catch (_) {}` and `function foo(_, ctx)` to
+      // signal "we know this is unused" without disabling no-unused-vars.
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      // `catch (_) {}` is the codebase's intentional-ignore convention. Allow
+      // empty catch bodies so the convention doesn't also need a dummy body.
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
 ]
