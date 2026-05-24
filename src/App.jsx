@@ -3,6 +3,12 @@ import { C, SERIF, SANS, MONO, FONTS, BP, BS } from './core/ui.jsx'
 import { validateLesson } from './core/validation.js'
 import { QuestionCard } from './core/renderers.jsx'
 import { applyPatches, runQAForFrame, generateQuestions, reviseDiagram } from './core/workflow.js'
+import {
+  loadStoredApiKey,
+  saveStoredApiKey,
+  ApiKeySettingsButton,
+  ApiKeyModal,
+} from './core/api-key.jsx'
 
 import Generate from './tabs/Generate.jsx'
 import Import from './tabs/Import.jsx'
@@ -31,6 +37,12 @@ const KNOWN_VIEWS = new Set([
    APP
 ═══════════════════════════════════════════ */
 export default function App() {
+  // API key — held in React state for UI reactivity (gear-button badge),
+  // backed by localStorage for persistence. Initial value is loaded lazily
+  // from localStorage so we don't read it on every render.
+  const [apiKey, setApiKey] = useState(() => loadStoredApiKey()),
+    [apiKeyModalOpen, setApiKeyModalOpen] = useState(false)
+
   const [input, setInput] = useState(''),
     [lesson, setLesson] = useState(null),
     [validation, setValidation] = useState(null),
@@ -310,6 +322,21 @@ export default function App() {
         xyzabcmnpqr
       </span>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      {apiKeyModalOpen && (
+        <ApiKeyModal
+          currentKey={apiKey}
+          onClose={() => setApiKeyModalOpen(false)}
+          onSave={(newKey) => {
+            // Attempt to persist, then mirror state from what actually
+            // landed in localStorage. saveStoredApiKey silently swallows
+            // failures (private-browsing, quota-exceeded, disabled storage);
+            // reading back means the gear's green dot can't lie about the
+            // key being saved while anthropicHeaders() still throws.
+            saveStoredApiKey(newKey)
+            setApiKey(loadStoredApiKey())
+          }}
+        />
+      )}
       {jsonPanel && (
         <div
           style={{
@@ -405,6 +432,10 @@ export default function App() {
                 : ''}
             </p>
           </div>
+          <ApiKeySettingsButton
+            hasKey={!!apiKey}
+            onClick={() => setApiKeyModalOpen(true)}
+          />
         </div>
       </div>
       <div
