@@ -33,7 +33,7 @@ function QAPanel({ lesson, setLesson, qaResults, setQaResults, qaRefs }) {
         try {
           const r = await runQAForFrame(q, el)
           results.push({ frameIdx: i, qId, frameLabel: `Q${i + 1}`, ...r })
-        } catch (e) {
+        } catch (_) {
           results.push({
             frameIdx: i,
             qId,
@@ -372,7 +372,6 @@ function QAPanel({ lesson, setLesson, qaResults, setQaResults, qaRefs }) {
           {qaResults.map((r) => {
             const blocking = (r.issues || []).filter((i) => i.severity === 'blocking'),
               major = (r.issues || []).filter((i) => i.severity === 'major'),
-              minor = (r.issues || []).filter((i) => i.severity === 'minor'),
               patches = (r.issues || []).filter((i) => i.patch)
             return (
               <div

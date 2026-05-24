@@ -1,4 +1,12 @@
+import { Parser } from 'expr-eval'
 import { C, SERIF, Instruction } from '../core/ui.jsx'
+
+// Shared parser instance — expr-eval's Parser is a whitelist math-expression
+// evaluator (+, -, *, /, ^, parens, common Math functions). It does NOT execute
+// arbitrary JavaScript, so a malicious or malformed `rule_expression` from the
+// LLM or a pasted lesson can't trigger code execution in the browser the way
+// the previous `new Function(...)` call could.
+const exprParser = new Parser()
 
 /* ═══════════════════════════════════════════
    DOMAIN — GRAPH
@@ -6,6 +14,9 @@ import { C, SERIF, Instruction } from '../core/ui.jsx'
 export function GraphRenderer({ q, isAnswer, worksheet }) {
   const grid = q.content?.grid || {},
     { xMin = -5, xMax = 5, yMin = -5, yMax = 5, step = 1 } = grid
+  // Guard `step` against 0 / NaN / negative — otherwise Math.floor((max-min)/step)
+  // produces Infinity or a negative length and Array.from blows up.
+  const safeStep = Math.max(0.1, Math.abs(Number(step) || 1))
   const pts = isAnswer ? q.answer?.points || [] : [],
     rule = q.content?.rule_expression || q.answer?.rule_expression
   const PAD = 32,
@@ -17,23 +28,26 @@ export function GraphRenderer({ q, isAnswer, worksheet }) {
   if (isAnswer && rule) {
     const m = rule.match(/y\s*=\s*(.+)/i)
     if (m) {
-      let expr = m[1]
-        .trim()
-        .replace(/(\d)x/g, '$1*x')
-        .replace(/x\^(\d+)/g, '(Math.pow(x,$1))')
-      for (let xi = xMin; xi <= xMax; xi += 0.1) {
-        try {
-          const y = Function('x', 'Math', `"use strict";return(${expr})`)(xi, Math)
+      try {
+        const expr = exprParser.parse(m[1].trim())
+        for (let xi = xMin; xi <= xMax; xi += 0.1) {
+          const y = expr.evaluate({ x: xi })
           if (isFinite(y) && y >= yMin - 1 && y <= yMax + 1) curve.push([toX(xi), toY(y)])
-        } catch (e) {}
+        }
+      } catch (_) {
+        // Parse or evaluation failure → no curve. Empty curve renders nothing,
+        // which is the same visible outcome as the previous swallow-and-continue.
       }
     }
   }
   const xT = Array.from(
-      { length: Math.floor((xMax - xMin) / step) + 1 },
-      (_, i) => xMin + i * step
+      { length: Math.floor((xMax - xMin) / safeStep) + 1 },
+      (_, i) => xMin + i * safeStep
     ),
-    yT = Array.from({ length: Math.floor((yMax - yMin) / step) + 1 }, (_, i) => yMin + i * step)
+    yT = Array.from(
+      { length: Math.floor((yMax - yMin) / safeStep) + 1 },
+      (_, i) => yMin + i * safeStep
+    )
   return (
     <div>
       <Instruction text={q.instruction} worksheet={worksheet} />

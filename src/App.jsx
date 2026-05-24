@@ -176,7 +176,7 @@ export default function App() {
           }
           todos.forEach((t) => allTodos.push({ frameLabel: `Q${i + 1}`, ...t }))
           if (!result.pass && !result._skipped) addLog('warn', `Q${i + 1}: ${result.summary}`)
-        } catch (e) {}
+        } catch (_) {}
       }
       if (totalPatches > 0) addLog('ok', `QA: ${totalPatches} total patches`)
       const finalLesson = {
@@ -225,7 +225,7 @@ export default function App() {
         try {
           const r = await runQAForFrame(q, el)
           results.push({ frameIdx: i, qId: q.id, frameLabel: `Q${i + 1}`, ...r })
-        } catch (e) {
+        } catch (_) {
           results.push({
             frameIdx: i,
             qId: q.id,
@@ -360,7 +360,7 @@ export default function App() {
             onClick={() => {
               try {
                 navigator.clipboard.writeText(jsonPanel.content).catch(() => {})
-              } catch (e) {}
+              } catch (_) {}
             }}
             style={{ ...BP, fontSize: '12px', padding: '8px 16px', flexShrink: 0 }}
           >

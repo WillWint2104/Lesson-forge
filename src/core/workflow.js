@@ -17,7 +17,7 @@ export function applyPatches(question, patches) {
         obj = obj[parts[i]]
       }
       obj[parts[parts.length - 1]] = patch.value
-    } catch (e) {}
+    } catch (_) {}
   })
   return q
 }
@@ -36,10 +36,10 @@ export function safeDownload(content, filename, mimeType, setPanel) {
     }, 100)
     if (setPanel) setPanel({ content, filename })
     return
-  } catch (e) {}
+  } catch (_) {}
   try {
     navigator.clipboard.writeText(content).catch(() => {})
-  } catch (e) {}
+  } catch (_) {}
   if (setPanel) setPanel({ content, filename })
 }
 export async function captureCardPng(el) {
@@ -62,7 +62,7 @@ export async function captureCardPng(el) {
   document.body.appendChild(container)
   try {
     await document.fonts.ready
-  } catch (e) {}
+  } catch (_) {}
   await new Promise((r) => setTimeout(r, 400))
   let result = null
   try {
@@ -75,7 +75,7 @@ export async function captureCardPng(el) {
       windowWidth: 1200,
     })
     result = canvas.toDataURL('image/png').split(',')[1]
-  } catch (e) {
+  } catch (_) {
   } finally {
     document.body.removeChild(container)
   }
@@ -130,7 +130,7 @@ export async function runQAForFrame(q, el) {
   let imgB64 = null
   try {
     imgB64 = await captureCardPng(el)
-  } catch (e) {}
+  } catch (_) {}
   const qc = { ...q }
   ;['_pool_set_vis', '_pool_set_hid', '_pool_vis_ids', '_pool_hid_ids', '_pool_editing'].forEach(
     (k) => delete qc[k]
@@ -180,7 +180,7 @@ export async function runQAForFrame(q, el) {
         .replace(/```json|```/g, '')
         .trim()
       return JSON.parse(text)
-    } catch (e) {
+    } catch (_) {
       return { pass: true, summary: 'Network error', issues: [], _skipped: true }
     }
   })()
@@ -257,7 +257,7 @@ export async function reviseDiagram(q, cardEl, maxIter, onProgress) {
     let imgB64 = null
     try {
       imgB64 = await captureCardPng(cardEl)
-    } catch (e) {}
+    } catch (_) {}
     onProgress({ iter, maxIter, phase: 'critique' })
     const userContent = []
     if (imgB64)

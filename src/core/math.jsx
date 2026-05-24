@@ -157,7 +157,7 @@ export function MathExpr({ text }) {
     /([^\s÷(]+|\([^)]+\))\s*÷\s*(\([^)]+\)|[^\s÷]+)/g,
     (_, n, d) => `${n.trim()}/${d.trim()}`
   )
-  const fracRe = /(\([^)]+\)|[\w−\-]+)\s*\/\s*(\([^)]+\)|[\w−\-]+)/g
+  const fracRe = /(\([^)]+\)|[\w−-]+)\s*\/\s*(\([^)]+\)|[\w−-]+)/g
   const segs = []
   let last = 0,
     m

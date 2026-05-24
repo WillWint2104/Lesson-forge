@@ -318,6 +318,11 @@ registerRenderer('classify', ClassifyRenderer)
 export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
   if (!q) return null
   const meta = TYPE_META[q.type] || { label: 'Unknown', icon: '?' },
+    // Renderer is a stable lookup into the renderer registry (registerRenderer
+    // / getRenderer in this same file) — the identity is constant per q.type.
+    // The two <Renderer ... /> render sites below each carry a local
+    // eslint-disable for react-hooks/static-components, which can't see the
+    // identity stability through the registry indirection.
     Renderer = getRenderer(q.type)
   const cardIssues = ((!worksheet && issues) || []).filter(
     (v) => v.field && v.field.includes(q.id || `Q${index + 1}`)
@@ -353,6 +358,7 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
             </span>
           )}
         </div>
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <Renderer q={q} isAnswer={isAnswer} worksheet={worksheet} />
       </div>
     )
@@ -440,6 +446,7 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
           ⚠ {iss.msg}
         </div>
       ))}
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <Renderer q={q} isAnswer={isAnswer} worksheet={worksheet} />
     </div>
   )

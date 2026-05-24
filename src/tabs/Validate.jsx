@@ -166,8 +166,17 @@ export default function Validate({
         </div>
         {qs.map((q, i) => {
           const m = TYPE_META[q.type],
+            // Anchored match — bare `.includes(q.id)` was a substring check, so
+            // `Q1` would falsely match issues whose `field` mentioned `Q10`,
+            // `Q11`, etc. We match: exact id, id followed by '(' (e.g.
+            // 'Q1(parts[0])'), or the synthesized 'Q<n>' fallback for
+            // questions without an explicit id.
             qi = [...validation.errors, ...validation.warnings].filter(
-              (v) => v.field && v.field.includes(q.id || `Q${i + 1}`)
+              (v) =>
+                v.field &&
+                (v.field === q.id ||
+                  (q.id && v.field.startsWith(q.id + '(')) ||
+                  v.field === `Q${i + 1}`)
             )
           return (
             <div
