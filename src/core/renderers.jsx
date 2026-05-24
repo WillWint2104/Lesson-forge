@@ -324,9 +324,20 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
     // eslint-disable for react-hooks/static-components, which can't see the
     // identity stability through the registry indirection.
     Renderer = getRenderer(q.type)
-  const cardIssues = ((!worksheet && issues) || []).filter(
-    (v) => v.field && v.field.includes(q.id || `Q${index + 1}`)
-  )
+  // Anchored field matching — `.includes(q.id)` would let `Q1` falsely capture
+  // issues whose field mentioned `Q10`, `Q11`, etc. Match exact id, id followed
+  // by '(' (e.g. `Q1(parts[0])`), the synthesized `Q<n>` fallback, or that
+  // fallback followed by '('.
+  const cardIssues = ((!worksheet && issues) || []).filter((v) => {
+    if (!v.field) return false
+    const fallback = `Q${index + 1}`
+    return (
+      v.field === q.id ||
+      (q.id && v.field.startsWith(q.id + '(')) ||
+      v.field === fallback ||
+      v.field.startsWith(fallback + '(')
+    )
+  })
   if (worksheet)
     return (
       <div style={{ background: 'white', border: '1.5px solid #E2E8F0', padding: '16px 20px' }}>

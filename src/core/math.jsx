@@ -198,12 +198,15 @@ export function NumberLine({ nl }) {
   const rW = nl.range || 8,
     min = nl.min ?? val - rW / 2,
     max = nl.max ?? val + rW / 2
+  // Guard against max === min (would divide by zero in toX, producing
+  // Infinity/NaN coordinates and a blank SVG).
+  const span = max - min || 1
   const W = 320,
     H = 48,
     PL = 24,
     PR = 24,
     plotW = W - PL - PR,
-    toX = (v) => PL + ((v - min) / (max - min)) * plotW,
+    toX = (v) => PL + ((v - min) / span) * plotW,
     cx = toX(val)
   const ticks = []
   for (let i = Math.ceil(min); i <= Math.floor(max); i++) {

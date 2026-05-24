@@ -165,18 +165,21 @@ export default function Validate({
           Questions
         </div>
         {qs.map((q, i) => {
+          const fallback = `Q${i + 1}`
           const m = TYPE_META[q.type],
             // Anchored match — bare `.includes(q.id)` was a substring check, so
             // `Q1` would falsely match issues whose `field` mentioned `Q10`,
             // `Q11`, etc. We match: exact id, id followed by '(' (e.g.
-            // 'Q1(parts[0])'), or the synthesized 'Q<n>' fallback for
-            // questions without an explicit id.
+            // 'Q1(parts[0])'), the synthesized 'Q<n>' fallback, or that
+            // fallback followed by '(' (kept in sync with renderers.jsx
+            // QuestionCard.cardIssues).
             qi = [...validation.errors, ...validation.warnings].filter(
               (v) =>
                 v.field &&
                 (v.field === q.id ||
                   (q.id && v.field.startsWith(q.id + '(')) ||
-                  v.field === `Q${i + 1}`)
+                  v.field === fallback ||
+                  v.field.startsWith(fallback + '('))
             )
           return (
             <div
