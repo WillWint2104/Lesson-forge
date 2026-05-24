@@ -53,22 +53,36 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
 
     steps:
-      - name: Resolve PR head branch
+      - name: Resolve PR head branch + SHA
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          head_ref=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" --jq '.head.ref')
+          # One API call returns the PR object; pull out both head branch name
+          # and the head commit SHA. The SHA is used later to scope CodeRabbit
+          # comments to the current head so we don't re-apply findings from
+          # earlier commits on the branch.
+          pr_json=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER")
+          head_ref=$(jq -r '.head.ref' <<<"$pr_json")
+          head_sha=$(jq -r '.head.sha' <<<"$pr_json")
           echo "branch=$head_ref" >> "$GITHUB_OUTPUT"
-          echo "Resolved PR #$PR_NUMBER head branch: $head_ref"
+          echo "sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "Resolved PR #$PR_NUMBER: branch=$head_ref sha=${head_sha:0:7}"
 
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        # Pinned to an immutable commit SHA (v4) rather than the @v4 mutable
+        # tag — supply-chain hardening so a future-tag retag can't silently
+        # change what this workflow runs.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ steps.pr.outputs.branch }}
           fetch-depth: 0          # full history so we can count autofix commits
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Don't persist GITHUB_TOKEN in .git/config. The push step below
+          # authenticates explicitly via a one-shot token-in-URL push so the
+          # token never lives in on-disk git config that could be read by any
+          # subsequent step (including Claude's tool invocations).
+          persist-credentials: false
 
       - name: Check autofix attempt cap (3 per branch)
         id: cap
@@ -115,13 +129,20 @@ jobs:
         if: steps.cap.outputs.stop != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ steps.pr.outputs.sha }}
         run: |
           set -euo pipefail
 
-          # Inline review comments — these are the ones with file:line context
-          # that we can actually act on.
-          gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER/comments" --paginate \
-            --jq '[.[] | select(.user.login | contains("coderabbitai")) | {path, line, side, body, html_url}]' \
+          # Pull all CodeRabbit inline comments, then filter to those whose
+          # commit_id matches the PR's current head SHA. Without this scope,
+          # stale comments from earlier commits on the branch would be
+          # re-attempted on every run — including ones we already addressed.
+          # Note: piping through jq with --arg requires dropping `gh api --jq`
+          # in favor of `gh api | jq`, which still works because --paginate
+          # concatenates pages into a single array.
+          gh api --paginate "repos/${{ github.repository }}/pulls/$PR_NUMBER/comments" \
+            | jq --arg sha "$HEAD_SHA" \
+                '[.[] | select(.user.login | contains("coderabbitai") and .commit_id == $sha) | {path, line, side, body, html_url}]' \
             > /tmp/inline.json
 
           # Filter for HIGH/MEDIUM by matching CodeRabbit's category headings/emoji.
@@ -133,15 +154,20 @@ jobs:
           echo "count=$n" >> "$GITHUB_OUTPUT"
 
           if [ "$n" -eq 0 ]; then
-            echo "::notice::CodeRabbit clean — no HIGH/MEDIUM findings to autofix."
+            echo "::notice::CodeRabbit clean — no HIGH/MEDIUM findings on $HEAD_SHA to autofix."
           else
-            echo "::notice::Found $n actionable finding(s):"
+            echo "::notice::Found $n actionable finding(s) on ${HEAD_SHA:0:7}:"
             jq -r '.[] | "  • \(.path):\(.line // "?")"' /tmp/actionable.json
           fi
 
       - name: Apply autofixes with Claude Code
         if: steps.cap.outputs.stop != 'true' && steps.findings.outputs.count != '0'
-        uses: anthropics/claude-code-action@v1
+        # Pinned to the commit the v1 annotated tag currently points to.
+        # See https://github.com/anthropics/claude-code-action/releases for
+        # bumps; update by re-running:
+        #   gh api repos/anthropics/claude-code-action/git/ref/tags/v1
+        # and dereferencing the tag object to its target commit.
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -194,6 +220,10 @@ jobs:
         if: steps.cap.outputs.stop != 'true' && steps.findings.outputs.count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Receive the GITHUB_TOKEN as a separate env var so we can embed it
+          # in a one-shot push URL below. Avoids putting the token into
+          # .git/config (we set persist-credentials: false at checkout time).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "$(git status --porcelain)" ]; then
@@ -214,7 +244,11 @@ jobs:
           Generated by .github/workflows/coderabbit-autofix.yml — review the
           diff before merging."
 
-          git push origin "HEAD:${{ steps.pr.outputs.branch }}"
+          # Auth the push explicitly with a token-in-URL one-liner rather than
+          # relying on persisted git credentials. The URL (with token) only
+          # lives in this shell invocation — it's not written to disk.
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" \
+            "HEAD:${{ steps.pr.outputs.branch }}"
           echo "::notice::Pushed autofix attempt $attempt/3 to ${{ steps.pr.outputs.branch }}"
 
       - name: Step summary
