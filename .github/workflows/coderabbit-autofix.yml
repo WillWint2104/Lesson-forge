@@ -1,0 +1,233 @@
+name: CodeRabbit Autofix
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Auto-apply CodeRabbit's HIGH/MEDIUM-severity review findings to a PR branch.
+#
+# Trigger model:
+#   1. PR opened against develop  → wait for CodeRabbit's first review (≤20 min)
+#   2. CodeRabbit posts a review  → re-run, apply fixes, push to PR branch
+#   3. CodeRabbit re-reviews the pushed commit → loop continues
+#   4. Stop when CodeRabbit is clean OR after 3 autofix commits on the branch
+#
+# IMPORTANT — prerequisites:
+#   • Repo secret `ANTHROPIC_API_KEY` must be set (Settings → Secrets → Actions).
+#   • For PRs from forks, GITHUB_TOKEN cannot push back — this workflow will
+#     only do useful work on same-repo PRs.
+#   • Pushes made with GITHUB_TOKEN don't re-trigger workflows. The loop relies
+#     on CodeRabbit re-reviewing each new commit (which it does automatically)
+#     and the resulting `pull_request_review` event re-firing this workflow.
+#
+# Severity mapping (matches CodeRabbit's emoji/heading conventions):
+#   HIGH    — Potential issue 🛠️, Bug 🐛, Security 🔒
+#   MEDIUM  — Refactor suggestion 🔧, Performance ⚡
+#   LOW     — Nitpick 🟢, Suggestion 💡  (skipped — too noisy for autofix)
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  autofix:
+    # Only run for: PR creation/update, OR CodeRabbit review, OR CodeRabbit
+    # comment. Anything else (other reviewers, non-PR issue comments) is a
+    # no-op so we don't waste CI minutes.
+    if: |
+      github.event_name == 'pull_request'
+      || (github.event_name == 'pull_request_review' && contains(github.event.review.user.login, 'coderabbitai'))
+      || (github.event_name == 'issue_comment' && github.event.issue.pull_request != null && contains(github.event.comment.user.login, 'coderabbitai'))
+    runs-on: ubuntu-latest
+
+    env:
+      # Resolve PR number from whichever event triggered us.
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+
+    steps:
+      - name: Resolve PR head branch
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          head_ref=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" --jq '.head.ref')
+          echo "branch=$head_ref" >> "$GITHUB_OUTPUT"
+          echo "Resolved PR #$PR_NUMBER head branch: $head_ref"
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+          fetch-depth: 0          # full history so we can count autofix commits
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check autofix attempt cap (3 per branch)
+        id: cap
+        run: |
+          set -euo pipefail
+          # Count commits on this branch whose subject starts with our marker.
+          # Scoped to commits ahead of develop so the cap resets on rebase.
+          merge_base=$(git merge-base HEAD origin/develop 2>/dev/null || echo "")
+          if [ -n "$merge_base" ]; then
+            count=$(git log "$merge_base..HEAD" --grep="^chore: coderabbit autofix" --pretty=format:"%h" | wc -l | tr -d ' ')
+          else
+            count=$(git log --grep="^chore: coderabbit autofix" --pretty=format:"%h" | wc -l | tr -d ' ')
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          if [ "$count" -ge 3 ]; then
+            echo "stop=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Already $count autofix commits on this branch — cap is 3, stopping."
+          else
+            echo "::notice::Autofix attempts so far on this branch: $count / 3"
+          fi
+
+      - name: Wait for CodeRabbit's first review (initial PR only)
+        if: steps.cap.outputs.stop != 'true' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # On PR open, CodeRabbit usually reviews within 1–3 minutes.
+          # Poll for up to 20 minutes (40 × 30 s).
+          for i in $(seq 1 40); do
+            n=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER/reviews" \
+                --jq '[.[] | select(.user.login | contains("coderabbitai"))] | length')
+            if [ "$n" -gt 0 ]; then
+              echo "Found $n CodeRabbit review(s) after $((i * 30))s."
+              exit 0
+            fi
+            echo "[$i/40] no CodeRabbit review yet, sleeping 30s..."
+            sleep 30
+          done
+          echo "::warning::Timed out waiting for CodeRabbit review (20 min)."
+
+      - name: Fetch actionable findings (HIGH / MEDIUM only)
+        id: findings
+        if: steps.cap.outputs.stop != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Inline review comments — these are the ones with file:line context
+          # that we can actually act on.
+          gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER/comments" --paginate \
+            --jq '[.[] | select(.user.login | contains("coderabbitai")) | {path, line, side, body, html_url}]' \
+            > /tmp/inline.json
+
+          # Filter for HIGH/MEDIUM by matching CodeRabbit's category headings/emoji.
+          # Anything not matching is treated as LOW (Nitpick/Suggestion) and skipped.
+          jq '[.[] | select(.body | test("Potential issue|🛠️|🐛|Security|🔒|Refactor suggestion|🔧|Performance|⚡"; "i"))]' \
+            /tmp/inline.json > /tmp/actionable.json
+
+          n=$(jq 'length' /tmp/actionable.json)
+          echo "count=$n" >> "$GITHUB_OUTPUT"
+
+          if [ "$n" -eq 0 ]; then
+            echo "::notice::CodeRabbit clean — no HIGH/MEDIUM findings to autofix."
+          else
+            echo "::notice::Found $n actionable finding(s):"
+            jq -r '.[] | "  • \(.path):\(.line // "?")"' /tmp/actionable.json
+          fi
+
+      - name: Apply autofixes with Claude Code
+        if: steps.cap.outputs.stop != 'true' && steps.findings.outputs.count != '0'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Restrict Claude to file editing + read-only inspection. No git, no
+          # network, no destructive bash — our subsequent step handles git ops
+          # so Claude doesn't accidentally push, rewrite history, or curl secrets.
+          claude_args: "--allowedTools 'Read,Edit,MultiEdit,Glob,Grep,LS,Bash(npm:*),Bash(jq:*),Bash(cat:*)'"
+          prompt: |
+            You are fixing CodeRabbit review findings on PR #${{ env.PR_NUMBER }}
+            in repository ${{ github.repository }}, branch ${{ steps.pr.outputs.branch }}.
+
+            The actionable findings (HIGH / MEDIUM severity only) are in the
+            file `/tmp/actionable.json`. Read it first:
+
+                cat /tmp/actionable.json
+
+            Each entry has:
+              - path       : file to edit (relative to repo root)
+              - line       : line CodeRabbit annotated
+              - body       : CodeRabbit's comment, usually with a suggested
+                             patch in a fenced ```suggestion or ```diff block
+              - html_url   : permalink to the comment
+
+            For each finding:
+              1. Read the file at `path`.
+              2. Apply the fix CodeRabbit suggests at `line`.
+              3. If `body` contains a fenced suggestion or diff block, prefer
+                 that exact patch.
+              4. If the fix is ambiguous, or would change behavior beyond
+                 what the finding explicitly asks for, SKIP it — do not
+                 guess. Note which findings you skipped and why in your
+                 final summary.
+
+            Hard constraints:
+              - Pure correctness fixes only. No refactors beyond what each
+                finding requests.
+              - Do not touch test files unless a finding itself targets one.
+              - Do not modify files under `.github/`, `package.json`,
+                `package-lock.json`, or any config files unless a finding
+                explicitly targets them.
+
+            After all fixes, run `npm run build` to verify the project still
+            builds. If the build breaks, revert your changes for whichever
+            finding caused the break and report it.
+
+            Do NOT run git commands. The next workflow step commits and
+            pushes whatever you change.
+
+      - name: Commit and push autofixes
+        if: steps.cap.outputs.stop != 'true' && steps.findings.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "::notice::Claude applied no changes — nothing to commit."
+            exit 0
+          fi
+
+          git config user.name  "coderabbit-autofix[bot]"
+          git config user.email "coderabbit-autofix@users.noreply.github.com"
+
+          attempt=$((${{ steps.cap.outputs.count }} + 1))
+          git add -A
+          git commit -m "chore: coderabbit autofix (attempt $attempt/3)
+
+          Auto-applied ${{ steps.findings.outputs.count }} CodeRabbit
+          HIGH/MEDIUM finding(s) on PR #$PR_NUMBER.
+
+          Generated by .github/workflows/coderabbit-autofix.yml — review the
+          diff before merging."
+
+          git push origin "HEAD:${{ steps.pr.outputs.branch }}"
+          echo "::notice::Pushed autofix attempt $attempt/3 to ${{ steps.pr.outputs.branch }}"
+
+      - name: Step summary
+        if: always()
+        run: |
+          {
+            echo "## CodeRabbit Autofix"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| PR | #${PR_NUMBER:-unknown} |"
+            echo "| Branch | \`${{ steps.pr.outputs.branch || 'unknown' }}\` |"
+            echo "| Attempt | $((${{ steps.cap.outputs.count || 0 }} + 1)) / 3 |"
+            echo "| Actionable findings | ${{ steps.findings.outputs.count || 'n/a' }} |"
+            echo "| Capped | ${{ steps.cap.outputs.stop || 'no' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
