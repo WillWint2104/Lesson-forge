@@ -116,7 +116,11 @@ export function WorkArea({ worksheet }) {
     />
   )
 }
-export function WorkedAnswer({ resp }) {
+// When rendered inside a part sub-card (#FAFAFA), pass `inline` so we skip
+// the outer mint wrapper — otherwise we'd nest two panels (grey → mint) with
+// mismatched corners. Standalone single-part answers (no sub-card) keep the
+// mint wrapper as the visual container.
+export function WorkedAnswer({ resp, inline }) {
   if (!resp) return null
   const nl = resp.number_line || null
   const block = () => {
@@ -217,6 +221,14 @@ export function WorkedAnswer({ resp }) {
             <MathExpr text={line} />
           </div>
         ))}
+      </div>
+    )
+  }
+  if (inline) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {block()}
+        {nl && <NumberLine nl={nl} />}
       </div>
     )
   }

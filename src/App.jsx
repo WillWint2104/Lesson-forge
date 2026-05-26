@@ -575,6 +575,7 @@ export default function App() {
                 worksheet={false}
                 issues={[]}
                 year={lesson?.year}
+                topic={lesson?.topic}
               />
               <QuestionCard
                 q={q}
@@ -583,6 +584,7 @@ export default function App() {
                 worksheet={false}
                 issues={[]}
                 year={lesson?.year}
+                topic={lesson?.topic}
               />
             </div>
           )

@@ -155,6 +155,7 @@ export default function Export({
               worksheet={worksheetMode}
               issues={[]}
               year={lesson?.year}
+              topic={lesson?.topic}
             />
             <div
               style={{
@@ -176,6 +177,7 @@ export default function Export({
               worksheet={worksheetMode}
               issues={[]}
               year={lesson?.year}
+              topic={lesson?.topic}
             />
           </div>
         ))}

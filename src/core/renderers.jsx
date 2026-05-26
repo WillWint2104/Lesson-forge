@@ -247,7 +247,9 @@ export function ShortAnswerRenderer({ q, isAnswer, worksheet }) {
               )}
               {isAnswer && resp ? (
                 <div style={{ marginTop: '8px' }}>
-                  <WorkedAnswer resp={resp} />
+                  {/* inline: skip WorkedAnswer's mint wrapper — we're already
+                      inside a #FAFAFA sub-card. */}
+                  <WorkedAnswer resp={resp} inline />
                 </div>
               ) : (
                 !isAnswer && <WorkArea worksheet={worksheet} />
@@ -288,7 +290,8 @@ export function DiagramRenderer({ q, isAnswer, worksheet }) {
                 </div>
                 {isAnswer && resp ? (
                   <div style={{ marginTop: '8px' }}>
-                    <WorkedAnswer resp={resp} />
+                    {/* inline: skip mint wrapper inside the sub-card. */}
+                    <WorkedAnswer resp={resp} inline />
                   </div>
                 ) : (
                   !isAnswer && <WorkArea worksheet={worksheet} />
@@ -403,7 +406,7 @@ registerRenderer('classify', ClassifyRenderer)
 /* ═══════════════════════════════════════════
    CORE — QUESTION CARD
 ═══════════════════════════════════════════ */
-export function QuestionCard({ q, index, isAnswer, issues, worksheet, year }) {
+export function QuestionCard({ q, index, isAnswer, issues, worksheet, year, topic }) {
   if (!q) return null
   const meta = TYPE_META[q.type] || { label: 'Unknown', icon: '?' },
     // Renderer is a stable lookup into the renderer registry (registerRenderer
@@ -429,10 +432,16 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet, year }) {
 
   const hasYear = year !== undefined && year !== null && String(year).trim() !== ''
   const hasSection = !!q.section
+  const hasTopic = !!(topic && String(topic).trim())
+  // Subtitle fallback chain — section wins over topic when both are present.
+  // Format: "Year X · qualifier" if year + (section OR topic), bare qualifier
+  // if no year, just "Year X" if neither qualifier is available.
   let subtitle = ''
   if (hasYear && hasSection) subtitle = `Year ${year} · ${q.section}`
+  else if (hasYear && hasTopic) subtitle = `Year ${year} · ${topic}`
   else if (hasYear) subtitle = `Year ${year}`
   else if (hasSection) subtitle = q.section
+  else if (hasTopic) subtitle = topic
 
   const sectionLabelText = q.section || q.type || ''
   const showSectionLabel = !!sectionLabelText
@@ -458,17 +467,8 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet, year }) {
             borderBottom: '1px solid #F1F5F9',
           }}
         >
-          <span
-            style={{
-              fontFamily: SANS,
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#1E293B',
-              flexShrink: 0,
-            }}
-          >
-            {index + 1}.
-          </span>
+          {/* Worksheet header carries the question number via the title only —
+              the standalone "1." chip was redundant alongside "Question 1". */}
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
             <div
               style={{

@@ -47,7 +47,7 @@ export default function Answers({ lesson, qs, title, qaAutoSummary, worksheetMod
           </button>
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
         {qs.map((q, i) => (
           <QuestionCard
             key={q.id || i}
@@ -57,6 +57,7 @@ export default function Answers({ lesson, qs, title, qaAutoSummary, worksheetMod
             worksheet={worksheetMode}
             issues={[]}
             year={lesson?.year}
+            topic={lesson?.topic}
           />
         ))}
       </div>
