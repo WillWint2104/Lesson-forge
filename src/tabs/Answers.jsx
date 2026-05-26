@@ -1,14 +1,7 @@
 import { C, SERIF, MONO, BP, BS } from '../core/ui.jsx'
 import { QuestionCard } from '../core/renderers.jsx'
 
-export default function Answers({
-  lesson,
-  qs,
-  title,
-  qaAutoSummary,
-  worksheetMode,
-  setView,
-}) {
+export default function Answers({ lesson, qs, title, qaAutoSummary, worksheetMode, setView }) {
   return (
     <div>
       <div
@@ -63,6 +56,7 @@ export default function Answers({
             isAnswer={true}
             worksheet={worksheetMode}
             issues={[]}
+            year={lesson?.year}
           />
         ))}
       </div>

@@ -29,7 +29,7 @@ export function McqRenderer({ q, isAnswer, worksheet }) {
   return (
     <div>
       <Instruction text={q.instruction} worksheet={worksheet} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {opts.map((opt) => {
           const hit = isAnswer && opt.key === correct
           return (
@@ -37,17 +37,17 @@ export function McqRenderer({ q, isAnswer, worksheet }) {
               key={opt.key}
               style={{
                 display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px',
-                padding: '8px 12px',
-                background: hit ? C.greenLt : '#FAFAFA',
-                border: `1.5px solid ${hit ? C.green : '#E2E8F0'}`,
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 14px',
+                background: hit ? '#EDF7F3' : '#FAFAFA',
+                border: `1px solid ${hit ? '#A3D9C6' : '#E5E7EB'}`,
+                borderRadius: '8px',
               }}
             >
               <span
                 style={{
-                  fontWeight: 700,
-                  color: hit ? C.greenDk : C.slate,
+                  color: hit ? '#3D9A7E' : '#64748B',
                   fontFamily: MONO,
                   fontSize: '13px',
                   minWidth: '20px',
@@ -56,12 +56,26 @@ export function McqRenderer({ q, isAnswer, worksheet }) {
               >
                 {opt.key}
               </span>
-              <span style={{ fontSize: '14px', lineHeight: 1.5, flex: 1 }}>
+              <span
+                style={{
+                  fontFamily: SANS,
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                  color: '#1E293B',
+                  flex: 1,
+                }}
+              >
                 <MathExpr text={opt.text} />
               </span>
               {hit && (
                 <span
-                  style={{ color: C.greenDk, fontWeight: 700, fontSize: '13px', flexShrink: 0 }}
+                  style={{
+                    color: '#3D9A7E',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    flexShrink: 0,
+                    marginLeft: 'auto',
+                  }}
                 >
                   ✓
                 </span>
@@ -73,12 +87,14 @@ export function McqRenderer({ q, isAnswer, worksheet }) {
       {isAnswer && q.answer?.explanation && (
         <div
           style={{
-            marginTop: '10px',
-            padding: '9px 13px',
-            background: C.greenLt,
-            borderLeft: `3px solid ${C.green}`,
+            marginTop: '12px',
+            padding: '10px 14px',
+            background: '#F0FBF7',
+            borderLeft: '3px solid #5CB89B',
+            borderRadius: '0 6px 6px 0',
             fontSize: '13px',
             fontFamily: SANS,
+            color: '#374151',
             lineHeight: 1.5,
           }}
         >
@@ -96,6 +112,82 @@ function cleanPrompt(text) {
     .trim()
 }
 
+function MethodBox({ method }) {
+  if (!method || typeof method !== 'string' || !method.trim()) return null
+  return (
+    <div
+      style={{
+        background: '#F0FBF7',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '16px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px',
+      }}
+    >
+      <div
+        style={{
+          width: '28px',
+          height: '28px',
+          background: '#5CB89B',
+          color: '#fff',
+          borderRadius: '6px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: MONO,
+          fontWeight: 700,
+          fontSize: '13px',
+          flexShrink: 0,
+        }}
+      >
+        ✓
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: '10px',
+            fontWeight: 700,
+            color: '#3D9A7E',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            marginBottom: '4px',
+          }}
+        >
+          METHOD
+        </div>
+        <div
+          style={{
+            fontFamily: SANS,
+            fontSize: '13px',
+            color: '#374151',
+            lineHeight: 1.5,
+          }}
+        >
+          {method}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const SUB_CARD_STYLE = {
+  background: '#FAFAFA',
+  border: '1px solid #E5E7EB',
+  borderRadius: '10px',
+  padding: '16px 18px',
+}
+
+const PART_PROMPT_STYLE = {
+  fontFamily: SERIF,
+  fontSize: '15px',
+  color: '#1E293B',
+  lineHeight: 1.5,
+  marginTop: '4px',
+}
+
 export function ShortAnswerRenderer({ q, isAnswer, worksheet }) {
   const parts = q.content?.parts,
     responses = q.answer?.responses || []
@@ -105,6 +197,7 @@ export function ShortAnswerRenderer({ q, isAnswer, worksheet }) {
       <div>
         <Instruction text={q.instruction} worksheet={worksheet} />
         <DiagramBlock diagram={q.content?.diagram} />
+        {isAnswer && <MethodBox method={q.answer?.method} />}
         {isAnswer && resp ? (
           <WorkedAnswer resp={resp} />
         ) : (
@@ -113,11 +206,20 @@ export function ShortAnswerRenderer({ q, isAnswer, worksheet }) {
       </div>
     )
   }
+  const multi = parts.length >= 2
   return (
     <div>
       <Instruction text={q.instruction} worksheet={worksheet} />
       <DiagramBlock diagram={q.content?.diagram} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+      {isAnswer && <MethodBox method={q.answer?.method} />}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: multi ? '1fr 1fr' : '1fr',
+          gap: '12px',
+          marginTop: '8px',
+        }}
+      >
         {parts.map((part, pi) => {
           const resp = responses.find((r) => r.label === part.label),
             mainP = cleanPrompt(part.prompt)
@@ -125,35 +227,30 @@ export function ShortAnswerRenderer({ q, isAnswer, worksheet }) {
             part.hint ||
             (part.prompt !== mainP ? part.prompt.match(/\(([^)]+first[^)]*)\)/i)?.[1] : null)
           return (
-            <div key={pi} style={{ padding: '10px 0', borderBottom: `1px solid ${C.slateLt}` }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                <PartLabel label={part.label} />
+            <div key={pi} style={SUB_CARD_STYLE}>
+              <PartLabel label={part.label} />
+              <div style={PART_PROMPT_STYLE}>
                 <MathExpr text={mainP} />
               </div>
               {hint && !isAnswer && (
                 <div
                   style={{
-                    marginLeft: '32px',
                     fontSize: '12px',
                     color: C.slate,
                     fontFamily: SANS,
                     fontStyle: 'italic',
-                    marginTop: '2px',
+                    marginTop: '6px',
                   }}
                 >
                   Hint: {hint}
                 </div>
               )}
               {isAnswer && resp ? (
-                <div style={{ marginLeft: '32px', marginTop: '4px' }}>
+                <div style={{ marginTop: '8px' }}>
                   <WorkedAnswer resp={resp} />
                 </div>
               ) : (
-                !isAnswer && (
-                  <div style={{ marginLeft: '32px' }}>
-                    <WorkArea worksheet={worksheet} />
-                  </div>
-                )
+                !isAnswer && <WorkArea worksheet={worksheet} />
               )}
             </div>
           )
@@ -166,39 +263,35 @@ export function ShortAnswerRenderer({ q, isAnswer, worksheet }) {
 export function DiagramRenderer({ q, isAnswer, worksheet }) {
   const parts = q.content?.parts,
     responses = q.answer?.responses || []
+  const multi = parts && parts.length >= 2
   return (
     <div>
       <Instruction text={q.instruction} worksheet={worksheet} />
       <DiagramBlock diagram={q.content?.diagram} />
+      {isAnswer && <MethodBox method={q.answer?.method} />}
       {parts && parts.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginTop: '8px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: multi ? '1fr 1fr' : '1fr',
+            gap: '12px',
+            marginTop: '8px',
+          }}
+        >
           {parts.map((part, pi) => {
             const resp = responses.find((r) => r.label === part.label)
             return (
-              <div key={pi} style={{ padding: '8px 0', borderBottom: `1px solid ${C.slateLt}` }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '10px',
-                    marginBottom: isAnswer && resp ? '6px' : 0,
-                  }}
-                >
-                  <PartLabel label={part.label} />
-                  <span style={{ fontSize: '14px', flex: 1, lineHeight: 1.5 }}>
-                    <MathExpr text={part.prompt} />
-                  </span>
+              <div key={pi} style={SUB_CARD_STYLE}>
+                <PartLabel label={part.label} />
+                <div style={PART_PROMPT_STYLE}>
+                  <MathExpr text={part.prompt} />
                 </div>
                 {isAnswer && resp ? (
-                  <div style={{ marginLeft: '32px' }}>
+                  <div style={{ marginTop: '8px' }}>
                     <WorkedAnswer resp={resp} />
                   </div>
                 ) : (
-                  !isAnswer && (
-                    <div style={{ marginLeft: '32px' }}>
-                      <WorkArea worksheet={worksheet} />
-                    </div>
-                  )
+                  !isAnswer && <WorkArea worksheet={worksheet} />
                 )}
               </div>
             )
@@ -209,10 +302,12 @@ export function DiagramRenderer({ q, isAnswer, worksheet }) {
           style={{
             marginTop: '10px',
             padding: '10px 14px',
-            background: C.greenLt,
-            borderLeft: `3px solid ${C.green}`,
+            background: '#F0FBF7',
+            borderLeft: '3px solid #5CB89B',
+            borderRadius: '0 6px 6px 0',
             fontFamily: SERIF,
             fontSize: '14px',
+            color: '#1E293B',
             lineHeight: 1.6,
           }}
         >
@@ -251,11 +346,11 @@ export function TableRenderer({ q, isAnswer, worksheet }) {
                   key={ci}
                   style={{
                     padding: '8px 14px',
-                    background: C.black,
+                    background: '#1E293B',
                     color: '#fff',
                     fontWeight: 700,
                     textAlign: 'left',
-                    border: `1px solid ${C.black}`,
+                    border: '1px solid #1E293B',
                   }}
                 >
                   {col}
@@ -265,33 +360,26 @@ export function TableRenderer({ q, isAnswer, worksheet }) {
           </thead>
           <tbody>
             {display.map((row, ri) => (
-              <tr key={ri} style={{ background: ri % 2 === 0 ? '#fff' : C.slateXlt }}>
+              <tr key={ri} style={{ background: ri % 2 === 0 ? '#fff' : '#F9FAFB' }}>
                 {row.map((cell, ci) => {
                   const was = blanks.has(`${ri}-${ci}`)
                   // Explicit blank check — `cell ? ...` would render numeric 0
                   // as the ▢ placeholder, which is wrong when 0 is a valid value.
                   const isBlank = cell === '' || cell == null
+                  const filled = isAnswer && was
                   return (
                     <td
                       key={ci}
                       style={{
                         padding: '8px 14px',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid #E5E7EB',
                         minWidth: '80px',
-                        background: isAnswer && was ? C.greenLt : undefined,
-                        fontWeight: isAnswer && was ? 700 : 400,
-                        color: isAnswer && was ? C.greenDk : C.black,
+                        background: filled ? '#EDF7F3' : undefined,
+                        fontWeight: filled ? 700 : 400,
+                        color: filled ? '#3D9A7E' : '#1E293B',
                       }}
                     >
-                      {isBlank ? (
-                        isAnswer ? (
-                          ''
-                        ) : (
-                          '▢'
-                        )
-                      ) : (
-                        <MathExpr text={String(cell)} />
-                      )}
+                      {isBlank ? isAnswer ? '' : '▢' : <MathExpr text={String(cell)} />}
                     </td>
                   )
                 })}
@@ -315,7 +403,7 @@ registerRenderer('classify', ClassifyRenderer)
 /* ═══════════════════════════════════════════
    CORE — QUESTION CARD
 ═══════════════════════════════════════════ */
-export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
+export function QuestionCard({ q, index, isAnswer, issues, worksheet, year }) {
   if (!q) return null
   const meta = TYPE_META[q.type] || { label: 'Unknown', icon: '?' },
     // Renderer is a stable lookup into the renderer registry (registerRenderer
@@ -338,17 +426,36 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
       v.field.startsWith(fallback + '(')
     )
   })
+
+  const hasYear = year !== undefined && year !== null && String(year).trim() !== ''
+  const hasSection = !!q.section
+  let subtitle = ''
+  if (hasYear && hasSection) subtitle = `Year ${year} · ${q.section}`
+  else if (hasYear) subtitle = `Year ${year}`
+  else if (hasSection) subtitle = q.section
+
+  const sectionLabelText = q.section || q.type || ''
+  const showSectionLabel = !!sectionLabelText
+
+  const cardShell = {
+    background: '#FFFFFF',
+    borderRadius: '12px',
+    borderTop: `2px solid ${cardIssues.length ? '#DC2626' : '#5CB89B'}`,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
+    padding: worksheet ? '20px 24px' : '24px 28px',
+  }
+
   if (worksheet)
     return (
-      <div style={{ background: 'white', border: '1.5px solid #E2E8F0', padding: '16px 20px' }}>
+      <div style={cardShell}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            marginBottom: '10px',
-            paddingBottom: '8px',
-            borderBottom: `1px solid ${C.slateLt}`,
+            gap: '12px',
+            paddingBottom: '14px',
+            marginBottom: '16px',
+            borderBottom: '1px solid #F1F5F9',
           }}
         >
           <span
@@ -356,85 +463,157 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
               fontFamily: SANS,
               fontSize: '14px',
               fontWeight: 700,
-              color: C.black,
-              minWidth: '28px',
+              color: '#1E293B',
               flexShrink: 0,
             }}
           >
             {index + 1}.
           </span>
-          {q.section && (
-            <span style={{ fontSize: '10px', color: C.slate, fontFamily: MONO }}>
-              § {q.section}
-            </span>
-          )}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                fontFamily: SANS,
+                fontSize: '16px',
+                fontWeight: 700,
+                color: '#1E293B',
+              }}
+            >
+              Question {index + 1}
+            </div>
+            {subtitle && (
+              <div
+                style={{
+                  fontFamily: SANS,
+                  fontSize: '13px',
+                  color: '#94A3B8',
+                  marginTop: '2px',
+                }}
+              >
+                {subtitle}
+              </div>
+            )}
+          </div>
+          <span
+            style={{
+              background: '#fff',
+              border: '1px solid #D1D5DB',
+              color: '#64748B',
+              fontFamily: MONO,
+              fontSize: '11px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              marginLeft: 'auto',
+            }}
+          >
+            {meta.icon} {meta.label}
+          </span>
         </div>
+        {showSectionLabel && (
+          <div
+            style={{
+              fontFamily: SANS,
+              fontSize: '10px',
+              letterSpacing: '0.1em',
+              color: '#94A3B8',
+              textTransform: 'uppercase',
+              marginBottom: '6px',
+            }}
+          >
+            {sectionLabelText}
+          </div>
+        )}
         {/* eslint-disable-next-line react-hooks/static-components */}
         <Renderer q={q} isAnswer={isAnswer} worksheet={worksheet} />
       </div>
     )
   return (
-    <div
-      style={{
-        background: 'white',
-        border: `1.5px solid ${cardIssues.length ? C.redMd : '#E2E8F0'}`,
-        padding: '20px 24px',
-      }}
-    >
+    <div style={cardShell}>
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          marginBottom: '12px',
-          paddingBottom: '10px',
-          borderBottom: `1px solid ${C.slateLt}`,
+          gap: '12px',
+          paddingBottom: '14px',
+          marginBottom: '16px',
+          borderBottom: '1px solid #F1F5F9',
         }}
       >
         <div
           style={{
-            width: '28px',
-            height: '28px',
-            background: `linear-gradient(135deg,${C.green},${C.greenDk})`,
+            width: '36px',
+            height: '36px',
+            background: '#5CB89B',
             color: '#fff',
+            borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 700,
-            fontSize: '13px',
+            fontSize: '16px',
             fontFamily: MONO,
             flexShrink: 0,
           }}
         >
           {index + 1}
         </div>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 0,
+            flex: 1,
+            marginLeft: '12px',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: SANS,
+              fontSize: '16px',
+              fontWeight: 700,
+              color: '#1E293B',
+            }}
+          >
+            Question {index + 1}
+          </div>
+          {subtitle && (
+            <div
+              style={{
+                fontFamily: SANS,
+                fontSize: '13px',
+                color: '#94A3B8',
+                marginTop: '2px',
+              }}
+            >
+              {subtitle}
+            </div>
+          )}
+        </div>
         <span
           style={{
-            fontSize: '10px',
-            fontWeight: 700,
-            color: C.green,
+            background: '#fff',
+            border: '1px solid #D1D5DB',
+            color: '#64748B',
             fontFamily: MONO,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
+            fontSize: '11px',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            flexShrink: 0,
           }}
         >
           {meta.icon} {meta.label}
         </span>
-        {q.section && (
-          <span style={{ fontSize: '10px', color: C.slate, fontFamily: MONO, marginLeft: 'auto' }}>
-            § {q.section}
-          </span>
-        )}
         {q.meta?.difficulty && (
           <span
             style={{
-              fontSize: '9px',
-              fontWeight: 700,
-              color: C.slate,
+              background: '#5CB89B',
+              color: '#fff',
               fontFamily: MONO,
-              background: C.slateLt,
-              padding: '2px 7px',
+              fontWeight: 700,
+              fontSize: '11px',
+              padding: '4px 10px',
+              borderRadius: '6px',
               textTransform: 'uppercase',
+              flexShrink: 0,
             }}
           >
             {q.meta.difficulty}
@@ -452,11 +631,26 @@ export function QuestionCard({ q, index, isAnswer, issues, worksheet }) {
             padding: '4px 10px',
             marginBottom: '8px',
             border: `1px solid ${C.orangeMd}`,
+            borderRadius: '6px',
           }}
         >
           ⚠ {iss.msg}
         </div>
       ))}
+      {showSectionLabel && (
+        <div
+          style={{
+            fontFamily: SANS,
+            fontSize: '10px',
+            letterSpacing: '0.1em',
+            color: '#94A3B8',
+            textTransform: 'uppercase',
+            marginBottom: '6px',
+          }}
+        >
+          {sectionLabelText}
+        </div>
+      )}
       {/* eslint-disable-next-line react-hooks/static-components */}
       <Renderer q={q} isAnswer={isAnswer} worksheet={worksheet} />
     </div>

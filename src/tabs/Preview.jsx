@@ -43,6 +43,7 @@ export default function Preview({ lesson, qs, title, validation, worksheetMode, 
             isAnswer={false}
             worksheet={worksheetMode}
             issues={[...(validation?.errors || []), ...(validation?.warnings || [])]}
+            year={lesson?.year}
           />
         ))}
       </div>
