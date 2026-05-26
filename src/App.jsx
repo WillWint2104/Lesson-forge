@@ -432,10 +432,7 @@ export default function App() {
                 : ''}
             </p>
           </div>
-          <ApiKeySettingsButton
-            hasKey={!!apiKey}
-            onClick={() => setApiKeyModalOpen(true)}
-          />
+          <ApiKeySettingsButton hasKey={!!apiKey} onClick={() => setApiKeyModalOpen(true)} />
         </div>
       </div>
       <div
@@ -571,8 +568,24 @@ export default function App() {
                 overflow: 'visible',
               }}
             >
-              <QuestionCard q={q} index={i} isAnswer={false} worksheet={false} issues={[]} />
-              <QuestionCard q={q} index={i} isAnswer={true} worksheet={false} issues={[]} />
+              <QuestionCard
+                q={q}
+                index={i}
+                isAnswer={false}
+                worksheet={false}
+                issues={[]}
+                year={lesson?.year}
+                topic={lesson?.topic}
+              />
+              <QuestionCard
+                q={q}
+                index={i}
+                isAnswer={true}
+                worksheet={false}
+                issues={[]}
+                year={lesson?.year}
+                topic={lesson?.topic}
+              />
             </div>
           )
         })}

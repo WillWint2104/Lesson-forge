@@ -34,7 +34,7 @@ export default function Preview({ lesson, qs, title, validation, worksheetMode, 
           Answers →
         </button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
         {qs.map((q, i) => (
           <QuestionCard
             key={q.id || i}
@@ -43,6 +43,8 @@ export default function Preview({ lesson, qs, title, validation, worksheetMode, 
             isAnswer={false}
             worksheet={worksheetMode}
             issues={[...(validation?.errors || []), ...(validation?.warnings || [])]}
+            year={lesson?.year}
+            topic={lesson?.topic}
           />
         ))}
       </div>

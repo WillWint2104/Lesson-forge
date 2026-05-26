@@ -56,105 +56,125 @@ export function GraphRenderer({ q, isAnswer, worksheet }) {
           {q.content.task}
         </p>
       )}
-      <svg
-        width={W}
-        height={H}
-        style={{ display: 'block', border: '1px solid #E2E8F0', background: '#FEFEFE' }}
+      <div
+        style={{
+          display: 'inline-block',
+          background: '#FAFAFA',
+          border: '1px solid #E5E7EB',
+          borderRadius: '8px',
+          padding: '8px',
+        }}
       >
-        {xT.map((x) => (
-          <line
-            key={'gx' + x}
-            x1={toX(x)}
-            y1={PAD}
-            x2={toX(x)}
-            y2={H - PAD}
-            stroke="#E2E8F0"
-            strokeWidth="0.5"
-          />
-        ))}
-        {yT.map((y) => (
-          <line
-            key={'gy' + y}
-            x1={PAD}
-            y1={toY(y)}
-            x2={W - PAD}
-            y2={toY(y)}
-            stroke="#E2E8F0"
-            strokeWidth="0.5"
-          />
-        ))}
-        {yMin <= 0 && yMax >= 0 && (
-          <line x1={PAD} y1={toY(0)} x2={W - PAD} y2={toY(0)} stroke={C.black} strokeWidth="1.5" />
-        )}
-        {xMin <= 0 && xMax >= 0 && (
-          <line x1={toX(0)} y1={PAD} x2={toX(0)} y2={H - PAD} stroke={C.black} strokeWidth="1.5" />
-        )}
-        {xT
-          .filter((x) => x !== 0)
-          .map((x) => (
-            <text
-              key={'tx' + x}
-              x={toX(x)}
-              y={toY(0) + 13}
-              fontSize="8"
-              fill={C.slate}
-              textAnchor="middle"
-            >
-              {x}
-            </text>
+        <svg width={W} height={H} style={{ display: 'block', background: '#FEFEFE' }}>
+          {xT.map((x) => (
+            <line
+              key={'gx' + x}
+              x1={toX(x)}
+              y1={PAD}
+              x2={toX(x)}
+              y2={H - PAD}
+              stroke="#E2E8F0"
+              strokeWidth="0.5"
+            />
           ))}
-        {yT
-          .filter((y) => y !== 0)
-          .map((y) => (
-            <text
-              key={'ty' + y}
-              x={toX(0) - 6}
-              y={toY(y) + 3}
-              fontSize="8"
-              fill={C.slate}
-              textAnchor="end"
-            >
-              {y}
-            </text>
+          {yT.map((y) => (
+            <line
+              key={'gy' + y}
+              x1={PAD}
+              y1={toY(y)}
+              x2={W - PAD}
+              y2={toY(y)}
+              stroke="#E2E8F0"
+              strokeWidth="0.5"
+            />
           ))}
-        {curve.length > 1 && (
-          <polyline
-            points={curve.map((p) => p.join(',')).join(' ')}
-            fill="none"
-            stroke={C.green}
-            strokeWidth="2"
-          />
-        )}
-        {pts.map((pt, pi) => (
-          <g key={pi}>
-            <circle
-              cx={toX(pt.x)}
-              cy={toY(pt.y)}
-              r={5}
-              fill={C.green}
-              stroke="#fff"
+          {yMin <= 0 && yMax >= 0 && (
+            <line
+              x1={PAD}
+              y1={toY(0)}
+              x2={W - PAD}
+              y2={toY(0)}
+              stroke={C.black}
               strokeWidth="1.5"
             />
-            {pt.label && (
+          )}
+          {xMin <= 0 && xMax >= 0 && (
+            <line
+              x1={toX(0)}
+              y1={PAD}
+              x2={toX(0)}
+              y2={H - PAD}
+              stroke={C.black}
+              strokeWidth="1.5"
+            />
+          )}
+          {xT
+            .filter((x) => x !== 0)
+            .map((x) => (
               <text
-                x={toX(pt.x) + 8}
-                y={toY(pt.y) - 6}
-                fontSize="10"
-                fontWeight="700"
-                fill={C.greenDk}
+                key={'tx' + x}
+                x={toX(x)}
+                y={toY(0) + 13}
+                fontSize="8"
+                fill={C.slate}
+                textAnchor="middle"
               >
-                {pt.label}
+                {x}
               </text>
-            )}
-          </g>
-        ))}
-        <text x={W - PAD + 4} y={toY(0) + 4} fontSize="10" fill={C.slate}>
-          x
-        </text>
-        <text x={toX(0) + 4} y={PAD - 4} fontSize="10" fill={C.slate}>
-          y
-        </text>
-      </svg>
+            ))}
+          {yT
+            .filter((y) => y !== 0)
+            .map((y) => (
+              <text
+                key={'ty' + y}
+                x={toX(0) - 6}
+                y={toY(y) + 3}
+                fontSize="8"
+                fill={C.slate}
+                textAnchor="end"
+              >
+                {y}
+              </text>
+            ))}
+          {curve.length > 1 && (
+            <polyline
+              points={curve.map((p) => p.join(',')).join(' ')}
+              fill="none"
+              stroke={C.green}
+              strokeWidth="2"
+            />
+          )}
+          {pts.map((pt, pi) => (
+            <g key={pi}>
+              <circle
+                cx={toX(pt.x)}
+                cy={toY(pt.y)}
+                r={5}
+                fill={C.green}
+                stroke="#fff"
+                strokeWidth="1.5"
+              />
+              {pt.label && (
+                <text
+                  x={toX(pt.x) + 8}
+                  y={toY(pt.y) - 6}
+                  fontSize="10"
+                  fontWeight="700"
+                  fill={C.greenDk}
+                >
+                  {pt.label}
+                </text>
+              )}
+            </g>
+          ))}
+          <text x={W - PAD + 4} y={toY(0) + 4} fontSize="10" fill={C.slate}>
+            x
+          </text>
+          <text x={toX(0) + 4} y={PAD - 4} fontSize="10" fill={C.slate}>
+            y
+          </text>
+        </svg>
+      </div>
     </div>
   )
 }

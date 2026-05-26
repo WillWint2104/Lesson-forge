@@ -405,25 +405,36 @@ export function GeometryDiagram({ data }) {
     />
   ))
   return (
-    <svg
-      width={W}
-      height={H}
-      viewBox={`-10 -5 ${W + 20} ${H + 20}`}
-      style={{ display: 'block', overflow: 'visible', maxWidth: '100%', margin: '8px 0' }}
+    <div
+      style={{
+        display: 'inline-block',
+        background: '#FAFAFA',
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
+        padding: '16px',
+        margin: '8px 0',
+      }}
     >
-      <defs>
-        <marker id="arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
-          <path d="M0,0 L7,2.5 L0,5" fill={G} />
-        </marker>
-      </defs>
-      <rect width={W} height={H} fill="#FEFFFE" />
-      {gridLines}
-      {consE}
-      {shapeE}
-      {angleE}
-      {ptE}
-      {lblE}
-    </svg>
+      <svg
+        width={W}
+        height={H}
+        viewBox={`-10 -5 ${W + 20} ${H + 20}`}
+        style={{ display: 'block', overflow: 'visible', maxWidth: '100%' }}
+      >
+        <defs>
+          <marker id="arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+            <path d="M0,0 L7,2.5 L0,5" fill={G} />
+          </marker>
+        </defs>
+        <rect width={W} height={H} fill="#FEFFFE" />
+        {gridLines}
+        {consE}
+        {shapeE}
+        {angleE}
+        {ptE}
+        {lblE}
+      </svg>
+    </div>
   )
 }
 
@@ -807,13 +818,23 @@ export function CTTriangleDiagram({ item }) {
     )
   })
   return (
-    <svg
-      width={svgW}
-      height={svgH}
-      viewBox={'0 0 ' + svgW + ' ' + svgH}
-      style={{ display: 'block', overflow: 'visible', maxWidth: '100%' }}
+    <div
+      style={{
+        display: 'inline-block',
+        background: '#FAFAFA',
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
+        padding: '16px',
+      }}
     >
-      {cells}
-    </svg>
+      <svg
+        width={svgW}
+        height={svgH}
+        viewBox={'0 0 ' + svgW + ' ' + svgH}
+        style={{ display: 'block', overflow: 'visible', maxWidth: '100%' }}
+      >
+        {cells}
+      </svg>
+    </div>
   )
 }

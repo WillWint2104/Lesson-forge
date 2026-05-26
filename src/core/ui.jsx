@@ -9,7 +9,7 @@ export const C = {
   greenMd: '#A3D9C6',
   black: BLACK,
   white: '#FFFFFF',
-  cream: '#FAF6F0',
+  cream: '#F5F5F3',
   purple: '#7C3AED',
   purpleLt: '#F5F3FF',
   purpleMd: '#DDD6FE',
@@ -27,7 +27,7 @@ export const SERIF = "'Newsreader',serif"
 export const SANS = "'Libre Franklin',sans-serif"
 export const MONO = "'DM Mono',monospace"
 export const FONTS =
-  'https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700&family=DM+Mono:wght@400;500;700&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400;1,700&display=swap'
 export const BP = {
   background: `linear-gradient(135deg,${C.green},${C.greenDk})`,
   color: '#fff',
@@ -67,10 +67,11 @@ export function Instruction({ text, worksheet }) {
     <p
       style={{
         fontFamily: SERIF,
-        fontSize: worksheet ? '16px' : '15px',
-        color: C.black,
-        lineHeight: 1.65,
-        margin: '0 0 10px',
+        fontSize: worksheet ? '18px' : '20px',
+        fontWeight: 600,
+        color: '#1E293B',
+        lineHeight: 1.5,
+        margin: '0 0 20px',
       }}
     >
       {text}
@@ -81,15 +82,22 @@ export function PartLabel({ label }) {
   return (
     <span
       style={{
-        fontWeight: 700,
-        color: C.green,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '24px',
+        height: '24px',
+        background: '#EDF7F3',
+        color: '#3D9A7E',
         fontFamily: SERIF,
-        fontSize: '15px',
-        minWidth: '24px',
+        fontStyle: 'italic',
+        fontSize: '13px',
+        borderRadius: '6px',
+        marginBottom: '10px',
         flexShrink: 0,
       }}
     >
-      {label})
+      {label}
     </span>
   )
 }
@@ -98,15 +106,21 @@ export function WorkArea({ worksheet }) {
   return (
     <div
       style={{
-        border: '1.5px dashed #CBD5E1',
-        background: '#FAFAFA',
-        height: '80px',
-        margin: '8px 0 4px',
+        background:
+          'repeating-linear-gradient(to bottom, transparent, transparent 23px, #E5E7EB 23px, #E5E7EB 24px)',
+        height: '96px',
+        margin: '12px 0 4px',
+        borderRadius: '6px',
+        padding: '4px 0',
       }}
     />
   )
 }
-export function WorkedAnswer({ resp }) {
+// When rendered inside a part sub-card (#FAFAFA), pass `inline` so we skip
+// the outer mint wrapper — otherwise we'd nest two panels (grey → mint) with
+// mismatched corners. Standalone single-part answers (no sub-card) keep the
+// mint wrapper as the visual container.
+export function WorkedAnswer({ resp, inline }) {
   if (!resp) return null
   const nl = resp.number_line || null
   const block = () => {
@@ -181,13 +195,13 @@ export function WorkedAnswer({ resp }) {
             <div
               style={{
                 marginTop: '8px',
-                paddingTop: '6px',
-                borderTop: `2px solid ${C.green}`,
+                border: '1.5px solid #1E293B',
+                borderRadius: '4px',
+                padding: '4px 12px',
+                display: 'inline-block',
                 fontSize: '14px',
                 fontWeight: 700,
-                color: C.greenDk,
-                padding: '6px 10px',
-                display: 'inline-block',
+                color: '#1E293B',
               }}
             >
               <MathExpr text={resp.final} />
@@ -207,6 +221,14 @@ export function WorkedAnswer({ resp }) {
             <MathExpr text={line} />
           </div>
         ))}
+      </div>
+    )
+  }
+  if (inline) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {block()}
+        {nl && <NumberLine nl={nl} />}
       </div>
     )
   }

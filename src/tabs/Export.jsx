@@ -101,8 +101,7 @@ export default function Export({
               onClick={() =>
                 safeDownload(
                   JSON.stringify(lesson, null, 2),
-                  (lesson.lesson_title || 'lesson').toLowerCase().split(' ').join('-') +
-                    '.json',
+                  (lesson.lesson_title || 'lesson').toLowerCase().split(' ').join('-') + '.json',
                   'application/json',
                   setJsonPanel
                 )
@@ -155,6 +154,8 @@ export default function Export({
               isAnswer={false}
               worksheet={worksheetMode}
               issues={[]}
+              year={lesson?.year}
+              topic={lesson?.topic}
             />
             <div
               style={{
@@ -175,6 +176,8 @@ export default function Export({
               isAnswer={true}
               worksheet={worksheetMode}
               issues={[]}
+              year={lesson?.year}
+              topic={lesson?.topic}
             />
           </div>
         ))}

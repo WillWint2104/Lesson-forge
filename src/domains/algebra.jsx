@@ -1,4 +1,4 @@
-import { C, SANS, Instruction } from '../core/ui.jsx'
+import { C, Instruction } from '../core/ui.jsx'
 import { MathExpr } from '../core/math.jsx'
 // Import from the leaf module rather than core/renderers.jsx — renderers.jsx
 // imports this file (for ClassifyRenderer), so going back through it would
@@ -25,8 +25,9 @@ export function ClassifyRenderer({ q, isAnswer, worksheet }) {
                 key={cat}
                 style={{
                   flex: '1 1 140px',
-                  border: `1.5px solid ${C.greenMd}`,
-                  background: C.greenLt,
+                  border: '1.5px solid #A3D9C6',
+                  background: '#fff',
+                  borderRadius: '8px',
                   padding: '10px 14px',
                 }}
               >
@@ -34,11 +35,16 @@ export function ClassifyRenderer({ q, isAnswer, worksheet }) {
                   style={{
                     fontWeight: 700,
                     fontSize: '11px',
-                    color: C.greenDk,
-                    fontFamily: SANS,
+                    color: '#3D9A7E',
+                    fontFamily: "'DM Mono',monospace",
+                    background: '#EDF7F3',
+                    border: '1.5px solid #A3D9C6',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
                     marginBottom: '8px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
+                    display: 'inline-block',
                   }}
                 >
                   {cat}
@@ -49,7 +55,7 @@ export function ClassifyRenderer({ q, isAnswer, worksheet }) {
                     style={{
                       fontSize: '13px',
                       padding: '3px 0',
-                      borderBottom: `1px solid ${C.greenMd}`,
+                      borderBottom: '1px solid #E5E7EB',
                       lineHeight: 1.4,
                     }}
                   >
@@ -70,6 +76,7 @@ export function ClassifyRenderer({ q, isAnswer, worksheet }) {
                   flex: '1 1 140px',
                   border: '1.5px dashed #CBD5E1',
                   background: C.slateXlt,
+                  borderRadius: '8px',
                   padding: '10px 14px',
                   minHeight: '56px',
                 }}
@@ -78,10 +85,15 @@ export function ClassifyRenderer({ q, isAnswer, worksheet }) {
                   style={{
                     fontWeight: 700,
                     fontSize: '11px',
-                    color: C.slate,
-                    fontFamily: SANS,
+                    color: '#3D9A7E',
+                    fontFamily: "'DM Mono',monospace",
+                    background: '#EDF7F3',
+                    border: '1.5px solid #A3D9C6',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
+                    display: 'inline-block',
                   }}
                 >
                   {cat}
@@ -95,8 +107,9 @@ export function ClassifyRenderer({ q, isAnswer, worksheet }) {
                 key={it}
                 style={{
                   padding: '4px 12px',
-                  border: '1.5px solid #E2E8F0',
-                  background: 'white',
+                  border: '1px solid #E5E7EB',
+                  background: '#fff',
+                  borderRadius: '6px',
                   fontSize: '13px',
                 }}
               >
